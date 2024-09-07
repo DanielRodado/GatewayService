@@ -33,7 +33,7 @@ public class JwtUtils {
         return (!isTokenExpired(token));
     }
 
-    private Claims parseClaims(String token) {
+    public Claims parseClaims(String token) {
         return Jwts.parser()
                 .verifyWith(secretKey)
                 .build()

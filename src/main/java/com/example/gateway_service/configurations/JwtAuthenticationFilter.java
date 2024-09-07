@@ -23,8 +23,12 @@ public class JwtAuthenticationFilter implements GatewayFilter {
             String token = authHeader.substring(7);
             try {
                 if (jwtUtils.validateToken(token)) {
-                    String username = jwtUtils.extractUsername(token);
-                    exchange.getRequest().mutate().header("username", username).build();
+                    if (checkAuthorization(token, exchange)) {
+                        return onErrorResponse(exchange, HttpStatus.UNAUTHORIZED); // Not authorized to access this resource
+                    } else {
+                        String username = jwtUtils.extractUsername(token);
+                        exchange.getRequest().mutate().header("username", username).build();
+                    }
                 } else {
                     return onErrorResponse(exchange, HttpStatus.UNAUTHORIZED); // JWT token invalid
                 }
@@ -41,5 +45,9 @@ public class JwtAuthenticationFilter implements GatewayFilter {
     private Mono<Void> onErrorResponse(ServerWebExchange exchange, HttpStatus httpStatus) {
         exchange.getResponse().setStatusCode(httpStatus);
         return exchange.getResponse().setComplete();
+    }
+
+    private boolean checkAuthorization(String token, ServerWebExchange exchange) {
+        return jwtUtils.parseClaims(token).get("rol").equals("USER") && !exchange.getRequest().getURI().toString().contains("current");
     }
 }
